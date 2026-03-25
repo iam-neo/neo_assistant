@@ -1,106 +1,110 @@
-import spacy
+import re
 from typing import Tuple
 
-try:
-    # Load the lightweight English model for basic NLP 
-    # (Tokenization, lemmatization, dependency parsing)
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    print("[!] spaCy English model 'en_core_web_sm' not found.")
-    print("[!] Please run: python -m spacy download en_core_web_sm")
-    nlp = None
+# --- Phase 2: NLP Normalization Layer ---
+# Maps Nepali words (Devanagari & Romanized) and English fillers to core structured tokens.
+NORMALIZATION_MAP = {
+    # Open / Launch variations
+    "खोल": "open",
+    "khola": "open",
+    "khol": "open",
+    "chalao": "open",
+    "जाउ": "open",
+    "jau": "open",
+    "start": "open",
+    "launch": "open",
+    
+    # Create / Folder variations
+    "बनाउ": "create",
+    "banao": "create",
+    "bana": "create",
+    "फोल्डर": "folder",
+    "naya": "create",
+    
+    # Exit / Stop
+    "बन्द": "exit",
+    "banda": "exit",
+    "stop": "exit",
+    "quit": "exit",
+    "close": "exit",
 
-# Mapping common intents to their variations (English + Romanized Nepali + Devanagari)
-INTENTS = {
-    "open": [
-        "open", "start", "launch", "khola", "kholna", "chalao", "chalauna", 
-        "khol", "खोल", "चलाउ", "jau", "जाउ", "visit", "browse", "run"
-    ],
-    "create_folder": [
-        "create folder", "make folder", "folder banao", "folder bana", 
-        "naya folder", "फोल्डर बनाउ", "build folder", "directory banao", "create a folder"
-    ],
-    "exit": [
-        "exit", "quit", "close", "stop", "banda", "banda gara", "roka", 
-        "बन्द", "terminate"
-    ]
+    # Fillers/Politeness (Map to empty string to remove them cleanly)
+    "please": "",
+    "can you": "",
+    "gara": "", 
+    "gar": "",
+    "the": "",
+    "a": "",
+    "an": "",
+    "ma": ""  # e.g., "youtube ma jau" -> "youtube jau" -> "youtube open"
 }
 
-# Common Nepali and English filler/stop words to ignore during parsing
-STOP_WORDS = {
-    "to", "the", "a", "an", "please", "gara", "up", "ma", "ko", "lai", 
-    "bata", "gari", "dinus", "gar", "for", "me", "एउटा", "कृपया", "गर"
-}
+KNOWN_WEBSITES = {"youtube", "google", "github", "stackoverflow", "gmail"}
 
-# Known web domains that should route to the open_website command
-KNOWN_WEBSITES = {"youtube", "google", "github", "stackoverflow", "gmail", "facebook", "reddit", "twitter"}
-
+def normalize_text(text: str) -> str:
+    """
+    Translates mixed input into a clean, normalized English base sequence.
+    Example: 'please chrome khola' -> 'chrome open'
+    """
+    text = text.lower()
+    
+    # Sort keys by length descending to match multi-word phrases first
+    sorted_keys = sorted(NORMALIZATION_MAP.keys(), key=len, reverse=True)
+    
+    for word in sorted_keys:
+        replacement = NORMALIZATION_MAP[word]
+        # Regex \b ensures we only replace whole English/Roman words.
+        # Devanagari chars [\u0900-\u097F] don't perfectly align with \b, so we use replace()
+        if re.search(r'[\u0900-\u097F]', word): 
+            text = text.replace(word, replacement)
+        else:
+            pattern = r'\b' + re.escape(word) + r'\b'
+            text = re.sub(pattern, replacement, text)
+            
+    # Clean up double spaces created by removing filler words
+    return " ".join(text.split())
 
 def parse_command(user_input: str) -> Tuple[str, str]:
     """
-    Parses user input utilizing lightweight NLP (spaCy) to handle syntactic variations 
-    in both English and mixed Nepali expressions. 
-    Maintains backward compatibility with simple rule-based intents.
+    Phase 2 Parser: 
+    1. Normalizes input (Nepali -> English, strips fillers)
+    2. Uses structured regex/logic to accurately extract intents and targets.
+    
+    Returns: (intent, data)
     """
-    user_input = user_input.strip().lower()
-
-    if not user_input:
+    normalized = normalize_text(user_input)
+    
+    if not normalized:
         return ("unknown", None)
 
-    # 1. Exit/Quit Intent (Fast Exact Phrase Match)
-    for trigger in INTENTS["exit"]:
-        if trigger in user_input:
-            return ("exit", None)
+    # 1. High-priority Exit intent
+    if "exit" in normalized:
+        return ("exit", None)
 
-    # 2. Create Folder Intent (Phrase Match)
-    for trigger in INTENTS["create_folder"]:
-        if trigger in user_input:
-            # Extract the target string by stripping the trigger
-            target = user_input.replace(trigger, "").strip()
-            # Clean up trailing/leading stop words (e.g., "folder banao test ko" -> "test")
-            words = [w for w in target.split() if w not in STOP_WORDS]
-            target = " ".join(words).strip()
-            return ("create_folder", target)
-
-    # 3. Flexible NLP parsing for App/Website launching
-    target_words = []
-    has_open_intent = False
-
-    if nlp:
-        # Utilize spaCy to tokenize and lemmatize
-        doc = nlp(user_input)
+    # 2. Structured Create Folder logic
+    # Covers "create folder test", "test folder create"
+    if "create folder" in normalized or "folder create" in normalized:
+        words = normalized.split()
+        # The target is any word that isn't 'create' or 'folder'
+        target_words = [w for w in words if w not in ["create", "folder"]]
+        target = " ".join(target_words).strip()
         
-        for token in doc:
-            word_str = token.text
-            lemma_str = token.lemma_
+        # Default name if user just says "folder banao" without a name
+        return ("create_folder", target if target else "new_folder")
 
-            # Check if the text or root verb matches our open intents
-            if word_str in INTENTS["open"] or lemma_str in INTENTS["open"]:
-                has_open_intent = True
-            elif word_str not in STOP_WORDS and not token.is_punct:
-                # If it's not the intent trigger and not a stop word, it's the target noun
-                target_words.append(word_str)
-    else:
-        # Fallback if spaCy isn't installed: simple split matching (legacy behavior)
-        words = user_input.split()
-        for word in words:
-            if word in INTENTS["open"]:
-                has_open_intent = True
-            elif word not in STOP_WORDS:
-                target_words.append(word)
-
-    # If we detected an "open" action, route it properly
-    if has_open_intent:
+    # 3. Structured Open intent
+    if "open" in normalized:
+        words = normalized.split()
+        target_words = [w for w in words if w != "open"]
         target = " ".join(target_words).strip()
         
         if not target:
             return ("unknown", None)
             
-        # Heuristics to separate websites from local apps
+        # Map target to a website or a system application
         if target in KNOWN_WEBSITES or "." in target:
             return ("open_website", target)
         else:
             return ("open_app", target)
 
-    # 4. Fallback: Unknown intent
     return ("unknown", None)
