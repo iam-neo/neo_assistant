@@ -1,27 +1,29 @@
 :root {
-    --bg-color: #050810;
+    --bg-color: #0b0f19;
+    --sidebar-bg: rgba(15, 20, 35, 0.4);
     --text-main: #f0f4f8;
     --text-muted: #8b9bb4;
     --accent-neon: #00f0ff;
     --accent-purple: #7000ff;
     --glass-bg: rgba(255, 255, 255, 0.02);
     --glass-border: rgba(255, 255, 255, 0.05);
+    --code-bg: rgba(0, 0, 0, 0.4);
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    scroll-behavior: smooth;
 }
 
 body {
     font-family: 'Outfit', sans-serif;
     background-color: var(--bg-color);
     color: var(--text-main);
-    line-height: normal;
+    line-height: 1.6;
     overflow-x: hidden;
     position: relative;
-    min-height: 100vh;
 }
 
 /* --- Atmospheric Background Effects --- */
@@ -59,171 +61,290 @@ body {
 }
 
 @keyframes float {
-    0% { transform: translate(0, 0) scale(1); }
-    100% { transform: translate(100px, 50px) scale(1.1); }
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    100% {
+        transform: translate(100px, 50px) scale(1.1);
+    }
 }
 
-/* --- Container & Layout --- */
+/* --- Layout --- */
 .container {
-    max-width: 900px;
+    max-width: 1300px;
     margin: 0 auto;
-    padding: 0 2rem;
 }
 
-header {
-    padding: 4rem 0 2rem;
-    text-align: center;
+.docs-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+    width: 280px;
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid var(--glass-border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    padding: 2.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
 }
 
 .logo {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 0.5rem;
+    gap: 0.8rem;
+    margin-bottom: 3rem;
 }
 
 .logo-icon {
-    font-size: 2.5rem;
-    filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.5));
+    font-size: 2rem;
 }
 
-h1 {
-    font-size: 3rem;
+.logo h1 {
+    font-size: 1.8rem;
     font-weight: 700;
-    letter-spacing: -1px;
 }
 
 .highlight {
     color: var(--accent-neon);
-    text-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
 }
 
-.subtitle {
+.toc ul {
+    list-style: none;
+}
+
+.toc li {
+    margin-bottom: 0.5rem;
+}
+
+.toc a {
+    display: block;
+    padding: 0.6rem 1rem;
     color: var(--text-muted);
-    font-size: 1.1rem;
-    font-weight: 300;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s;
+    font-weight: 400;
 }
 
-/* --- Timeline Layout --- */
-.timeline-section {
-    padding: 2rem 0 5rem;
+.toc a:hover,
+.toc a.active {
+    background: rgba(0, 240, 255, 0.1);
+    color: var(--text-main);
+    box-shadow: inset 2px 0 0 var(--accent-neon);
 }
 
-.timeline-header {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    margin-bottom: 3rem;
+/* --- Main Content --- */
+.content-area {
+    flex: 1;
+    padding: 4rem 5rem;
 }
 
-.timeline-header h2 {
-    font-size: 1.5rem;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-.timeline-header .line {
-    height: 1px;
-    width: 100%;
-    background: linear-gradient(90deg, var(--glass-border) 0%, transparent 100%);
-}
-
-.updates-container {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
-
-/* --- Premium Glassmorphism Cards --- */
-.update-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
-    padding: 2rem;
-    position: relative;
-    /* Hardware acceleration for smooth animation */
-    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1); 
+.doc-section {
+    margin-bottom: 5rem;
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(20px);
+    transition: all 0.7s ease;
 }
 
-.update-card.reveal {
+.doc-section.reveal {
     opacity: 1;
     transform: translateY(0);
 }
 
-.update-card:hover {
-    border-color: rgba(0, 240, 255, 0.2);
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
-    transform: translateY(-5px);
+h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+    color: #fff;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 1rem;
 }
 
-/* --- Card Typography & Data --- */
+p {
+    margin-bottom: 1.5rem;
+    color: #a0aec0;
+    font-size: 1.05rem;
+}
+
+.lead-text {
+    font-size: 1.25rem;
+    color: var(--text-main);
+    font-weight: 300;
+}
+
+.section-badge {
+    display: inline-block;
+    background: rgba(112, 0, 255, 0.2);
+    color: #c49aff;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(112, 0, 255, 0.3);
+}
+
+/* Glass Panels & Elements */
+.glass-panel {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    padding: 1.5rem 2rem;
+    border-radius: 12px;
+    border-left: 4px solid var(--accent-neon);
+    margin-top: 2rem;
+}
+
+.glass-panel p {
+    margin: 0;
+}
+
+/* Grid Cards */
+.grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.feature-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    padding: 1.5rem;
+    border-radius: 16px;
+    transition: transform 0.3s border-color 0.3s;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(0, 240, 255, 0.3);
+}
+
+.feature-card .icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.feature-card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.feature-card p {
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+/* Code Blocks */
+.code-block-wrapper {
+    background: var(--code-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.code-header {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.code-header .lang {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+pre {
+    padding: 1.5rem;
+    overflow-x: auto;
+}
+
+code {
+    font-family: 'Consolas', monospace;
+    color: #a5b4fc;
+    font-size: 0.95rem;
+}
+
+/* Backwards compatibility for the script.js timeline styling */
+.updates-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.update-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    padding: 1.5rem;
+    border-radius: 12px;
+}
+
 .card-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .version-badge {
     background: rgba(0, 240, 255, 0.1);
     color: var(--accent-neon);
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-    border: 1px solid rgba(0, 240, 255, 0.2);
-}
-
-.update-date {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    font-weight: 400;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
 }
 
 .update-title {
-    font-size: 1.4rem;
-    margin-bottom: 1rem;
-    font-weight: 500;
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
 }
 
 .update-description {
-    color: var(--text-muted);
-    font-size: 1rem;
-    line-height: 1.6;
-    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
 }
 
 .feature-list {
     list-style: none;
-    display: grid;
-    gap: 0.8rem;
+    padding-left: 1rem;
 }
 
 .feature-list li {
     position: relative;
-    padding-left: 1.5rem;
-    font-size: 0.95rem;
-    color: #cbd5e1;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
 }
 
 .feature-list li::before {
     content: '→';
     position: absolute;
-    left: 0;
+    left: -1rem;
     color: var(--accent-neon);
-    font-weight: bold;
 }
 
-/* --- Footer --- */
-footer {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    border-top: 1px solid var(--glass-border);
+@media (max-width: 900px) {
+    .docs-layout {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        border-right: none;
+        border-bottom: 1px solid var(--glass-border);
+        padding: 1.5rem;
+    }
+
+    .content-area {
+        padding: 2rem 1.5rem;
+    }
 }

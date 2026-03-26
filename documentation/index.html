@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neo Assistant - Documentation</title>
-    <meta name="description" content="Changelog and documentation logs for the Neo Assistant offline AI project.">
+    <title>Neo Assistant Docs</title>
     <!-- Modern Typography: Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <!-- Immersive Background Layers -->
     <div class="background-effects">
@@ -18,33 +19,122 @@
         <div class="glow-orb orb-2"></div>
     </div>
 
-    <header>
-        <div class="container header-container">
+    <div class="docs-layout container">
+
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
             <div class="logo">
                 <span class="logo-icon">🤖</span>
-                <h1>Neo <span class="highlight">Assistant</span></h1>
+                <h1>Neo <span class="highlight">Docs</span></h1>
             </div>
-            <p class="subtitle">System Documentation & Visual Update Logs</p>
-        </div>
-    </header>
+            <nav class="toc">
+                <ul>
+                    <li><a href="#introduction" class="active">Introduction</a></li>
+                    <li><a href="#features">Core Features</a></li>
+                    <li><a href="#quickstart">Quickstart</a></li>
+                    <li><a href="#architecture">Architecture</a></li>
+                    <li><a href="#changelog">Changelog</a></li>
+                </ul>
+            </nav>
+        </aside>
 
-    <main class="container">
-        <section class="timeline-section">
-            <div class="timeline-header">
-                <h2>Project Updates</h2>
-                <div class="line"></div>
-            </div>
-            
-            <!-- JS dynamically injects the update cards here -->
-            <div id="updates-container" class="updates-container"></div>
-        </section>
-    </main>
+        <!-- Main Content Area -->
+        <main class="content-area">
 
-    <footer>
-        <p>Offline AI Command System • Built with 🐍 Python</p>
-    </footer>
+            <section id="introduction" class="doc-section reveal">
+                <div class="section-badge">Overview</div>
+                <h2>Welcome to Neo Assistant</h2>
+                <p class="lead-text">
+                    A lightweight, rule-based local AI assistant designed to be fully modular and run entirely offline
+                    without requiring heavy external dependencies.
+                </p>
+                <div class="glass-panel">
+                    <p>Neo takes text commands, interprets the user's intent via a straightforward parsing rule-engine
+                        initially, and uses an advanced Local LLM fallback mechanism to handle complex reasoning
+                        entirely on-device.</p>
+                </div>
+            </section>
+
+            <section id="features" class="doc-section">
+                <h2>Core Features</h2>
+                <div class="grid-cards">
+                    <div class="feature-card">
+                        <div class="icon">🚀</div>
+                        <h3>System Triggers</h3>
+                        <p>Launch applications, websites, and create system folders instantly.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🧠</div>
+                        <h3>LLM Fallback</h3>
+                        <p>Phase 3 integration routes complex English and Nepali input to an offline Mistral model.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🇳🇵</div>
+                        <h3>Native NLP</h3>
+                        <p>Built-in spaCy tokenization parsing Romanized and Devanagari text seamlessly.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🔒</div>
+                        <h3>100% Offline</h3>
+                        <p>No API keys, internet connection, or telemetry required whatsoever.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="quickstart" class="doc-section">
+                <h2>Quickstart Setup</h2>
+                <p>Because Neo Assistant prioritizes a zero-dependency architecture out of the box, getting started is
+                    practically instantaneous.</p>
+
+                <div class="code-block-wrapper">
+                    <div class="code-header">
+                        <span class="lang">bash</span>
+                    </div>
+                    <pre><code># 1. Clone the repository
+git clone https://github.com/your-repo/neo-assistant.git
+
+# 2. Navigate to project
+cd neo-assistant
+
+# 3. Start the interactive loop
+python main.py</code></pre>
+                </div>
+
+                <p>Configure your `data/apps.json` to map your custom desktop software natively into the parser's
+                    registry.</p>
+            </section>
+
+            <section id="architecture" class="doc-section">
+                <h2>System Architecture</h2>
+                <p>Commands are elegantly encapsulated. The parser funnels text to discrete modules.</p>
+                <div class="code-block-wrapper">
+                    <div class="code-header"><span class="lang">Directory Structure</span></div>
+                    <pre><code>neo_assistant/
+│── main.py                   # Main loop & router
+│── commands/                 # Executable actions
+│     ├── open_app.py         
+│     ├── create_folder.py    
+│     └── open_website.py     
+│── utils/                    
+│     ├── parser.py           # NLP Intent parser
+│     └── llm.py              # Ollama Connector
+└── data/
+      └── apps.json           # JSON app registry</code></pre>
+                </div>
+            </section>
+
+            <section id="changelog" class="doc-section">
+                <h2>Project Changelog</h2>
+                <p>The evolutionary updates to the Neo ecosystem.</p>
+                <!-- JS dynamically injects the timeline cards here -->
+                <div id="updates-container" class="updates-container"></div>
+            </section>
+
+        </main>
+    </div>
 
     <!-- Logic Layer -->
     <script src="script.js"></script>
 </body>
+
 </html>
