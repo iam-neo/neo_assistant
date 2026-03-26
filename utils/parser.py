@@ -1,5 +1,6 @@
 import re
 from typing import Tuple
+from utils.llm import query_llm
 
 # --- Phase 2: NLP Normalization Layer ---
 # Maps Nepali words (Devanagari & Romanized) and English fillers to core structured tokens.
@@ -75,7 +76,7 @@ def parse_command(user_input: str) -> Tuple[str, str]:
     normalized = normalize_text(user_input)
     
     if not normalized:
-        return ("unknown", None)
+        return query_llm(user_input)
 
     # 1. High-priority Exit intent
     if "exit" in normalized:
@@ -99,7 +100,7 @@ def parse_command(user_input: str) -> Tuple[str, str]:
         target = " ".join(target_words).strip()
         
         if not target:
-            return ("unknown", None)
+            return query_llm(user_input)
             
         # Map target to a website or a system application
         if target in KNOWN_WEBSITES or "." in target:
@@ -107,4 +108,4 @@ def parse_command(user_input: str) -> Tuple[str, str]:
         else:
             return ("open_app", target)
 
-    return ("unknown", None)
+    return query_llm(user_input)
