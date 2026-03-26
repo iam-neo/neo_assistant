@@ -7,8 +7,10 @@ A lightweight, rule-based local AI assistant written purely in Python. Neo Assis
 - **Open Applications:** Start your favorite desktop apps like Chrome or Notepad instantly.
 - **Open Websites:** Launch any website directly in your default browser.
 - **Create Folders:** Instantly make new directories on your filesystem.
-- **Extensible & Modular Architecture:** Commands are cleanly separated into their own modules, making it incredibly easy to add new capabilities (or plug in a real LLM later).
-- **100% Offline:** Uses standard Python libraries. No API keys, internet connection, or external packages required.
+- **Mixed Language NLP (Phase 2):** Native support for English and Nepali commands using a lightweight normalization layer.
+- **LLM Fallback (Phase 3):** Integrates with a local Ollama instance (`mistral` model) to handle complex reasoning entirely offline when rule-based engines fail.
+- **Extensible & Modular Architecture:** Commands are cleanly separated into their own modules, making it incredibly easy to add new capabilities.
+- **100% Offline:** Zero external tracking. Uses standard Python libraries and local machine-learning models.
 
 ## Project Structure
 
@@ -20,7 +22,8 @@ neo_assistant/
 │     ├── create_folder.py    # Module to safely make directories
 │     └── open_website.py     # Module to open URLs dynamically
 │── utils/                    
-│     └── parser.py           # The rule-based intent parsing engine
+│     ├── parser.py           # The rule-based intent parsing engine
+│     └── llm.py              # LLM Connector communicating with local Ollama
 └── data/
       └── apps.json           # JSON configuration mapping app names to system commands
 ```
