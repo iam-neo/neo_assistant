@@ -67,15 +67,17 @@ def normalize_text(text: str) -> str:
 
 def parse_command(user_input: str) -> Tuple[str, str]:
     """
-    Phase 2 Parser: 
-    1. Normalizes input (Nepali -> English, strips fillers)
-    2. Uses structured regex/logic to accurately extract intents and targets.
+    Phase 3 Parser: 
+    1. Normalizes input (Nepali -> English, strips fillers).
+    2. Uses structured rule-based logic to accurately extract intents.
+    3. FALLBACK: Uses local LLM if the intent is not clear.
     
     Returns: (intent, data)
     """
     normalized = normalize_text(user_input)
     
     if not normalized:
+        # Fallback to LLM for completely unfamiliar input
         return query_llm(user_input)
 
     # 1. High-priority Exit intent
@@ -100,6 +102,7 @@ def parse_command(user_input: str) -> Tuple[str, str]:
         target = " ".join(target_words).strip()
         
         if not target:
+            # Revert to LLM if the open target is ambiguous
             return query_llm(user_input)
             
         # Map target to a website or a system application
@@ -108,4 +111,6 @@ def parse_command(user_input: str) -> Tuple[str, str]:
         else:
             return ("open_app", target)
 
+    # 4. Final Fallback Mechanism:
+    # If the rule-based system reaches here, no exact structured pattern matched.
     return query_llm(user_input)
