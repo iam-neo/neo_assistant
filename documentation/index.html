@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neo Assistant Docs</title>
+    <meta name="description" content="Complete documentation and code explanation for Neo Assistant — a local, offline AI assistant supporting English and Nepali commands.">
     <!-- Modern Typography: Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,6 +34,10 @@
                     <li><a href="#features">Core Features</a></li>
                     <li><a href="#quickstart">Quickstart</a></li>
                     <li><a href="#architecture">Architecture</a></li>
+                    <li><a href="#code-explanation">Code Explanation</a></li>
+                    <li><a href="#data-flow">Data Flow</a></li>
+                    <li><a href="#normalization">Normalization Map</a></li>
+                    <li><a href="#trace-examples">Trace Examples</a></li>
                     <li><a href="#changelog">Changelog</a></li>
                 </ul>
             </nav>
@@ -71,7 +76,7 @@
                     <div class="feature-card">
                         <div class="icon">🇳🇵</div>
                         <h3>Native NLP</h3>
-                        <p>Built-in spaCy tokenization parsing Romanized and Devanagari text seamlessly.</p>
+                        <p>Built-in tokenization parsing Romanized and Devanagari text seamlessly.</p>
                     </div>
                     <div class="feature-card">
                         <div class="icon">🔒</div>
@@ -100,7 +105,7 @@ cd neo-assistant
 python main.py</code></pre>
                 </div>
 
-                <p>Configure your `data/apps.json` to map your custom desktop software natively into the parser's
+                <p>Configure your <code>data/apps.json</code> to map your custom desktop software natively into the parser's
                     registry.</p>
             </section>
 
@@ -110,16 +115,507 @@ python main.py</code></pre>
                 <div class="code-block-wrapper">
                     <div class="code-header"><span class="lang">Directory Structure</span></div>
                     <pre><code>neo_assistant/
-│── main.py                   # Main loop & router
-│── commands/                 # Executable actions
-│     ├── open_app.py         
-│     ├── create_folder.py    
-│     └── open_website.py     
-│── utils/                    
-│     ├── parser.py           # NLP Intent parser
-│     └── llm.py              # Ollama Connector
+├── main.py                   # 🎯 Entry point & main loop
+├── test_llm.py               # 🧪 Test suite with mocked LLM
+├── requirements.txt          # 📦 Dependencies
+├── README.md                 # 📄 Documentation
+├── utils/
+│   ├── parser.py             # 🧠 NLP normalization + rule-based parser
+│   └── llm.py                # 🤖 Ollama/Mistral LLM fallback
+├── commands/
+│   ├── open_app.py           # ⚙️ Opens system applications
+│   ├── open_website.py       # 🌐 Opens websites in browser
+│   └── create_folder.py      # 📁 Creates directories
 └── data/
-      └── apps.json           # JSON app registry</code></pre>
+    └── apps.json             # 📋 App name → system command mapping</code></pre>
+                </div>
+
+                <!-- Intent Routing Table -->
+                <h3 class="sub-heading">Intent Routing Table</h3>
+                <p>The main loop routes parsed intents to specific executor modules:</p>
+                <div class="table-wrapper">
+                    <table class="docs-table" id="routing-table">
+                        <thead>
+                            <tr>
+                                <th>Intent</th>
+                                <th>Routed To</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>open_app</code></td>
+                                <td><code>commands/open_app.py</code></td>
+                                <td>Launches a system application</td>
+                            </tr>
+                            <tr>
+                                <td><code>open_website</code></td>
+                                <td><code>commands/open_website.py</code></td>
+                                <td>Opens URL in default browser</td>
+                            </tr>
+                            <tr>
+                                <td><code>create_folder</code></td>
+                                <td><code>commands/create_folder.py</code></td>
+                                <td>Creates a directory</td>
+                            </tr>
+                            <tr>
+                                <td><code>exit</code></td>
+                                <td>Handled in <code>main.py</code></td>
+                                <td>Stops the assistant loop</td>
+                            </tr>
+                            <tr>
+                                <td><code>unknown</code></td>
+                                <td>Handled in <code>main.py</code></td>
+                                <td>Prints error message</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ===== NEW: Code Explanation Section ===== -->
+            <section id="code-explanation" class="doc-section">
+                <div class="section-badge">Deep Dive</div>
+                <h2>Code Explanation: How "open youtube" Works</h2>
+                <p class="lead-text">
+                    A complete line-by-line trace through every file involved when the user types
+                    <code>"open youtube"</code> into the Neo Assistant.
+                </p>
+
+                <!-- Step 1 -->
+                <div class="step-card" id="step-1">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <div class="step-meta">
+                            <h3>Input Capture</h3>
+                            <span class="file-badge">main.py → Line 39</span>
+                        </div>
+                    </div>
+                    <p>The main loop waits for user input using Python's built-in <code>input()</code> function:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header"><span class="lang">python — main.py</span></div>
+                        <pre><code>user_input = input("Neo> ")  <span class="code-comment"># user_input = "open youtube"</span></code></pre>
+                    </div>
+                    <div class="glass-panel">
+                        <p>The <code>NeoAssistant.run()</code> method contains a <code>while self.running</code> loop. 
+                        Each iteration captures one command, parses it, and routes it.</p>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="step-card" id="step-2">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <div class="step-meta">
+                            <h3>Send to Parser</h3>
+                            <span class="file-badge">main.py → Line 46</span>
+                        </div>
+                    </div>
+                    <p>The raw input is sent to the central parser which returns a structured <code>(intent, data)</code> tuple:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header"><span class="lang">python — main.py</span></div>
+                        <pre><code>intent, data = parse_command("open youtube")
+<span class="code-comment"># Let's trace what happens inside parse_command()...</span></code></pre>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="step-card" id="step-3">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <div class="step-meta">
+                            <h3>Text Normalization</h3>
+                            <span class="file-badge">parser.py → normalize_text()</span>
+                        </div>
+                    </div>
+                    <p>Inside <code>parse_command()</code>, the first step normalizes the input — translating Nepali words and removing filler words:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header"><span class="lang">python — utils/parser.py</span></div>
+                        <pre><code>normalized = normalize_text("open youtube")
+
+<span class="code-comment"># Inside normalize_text():</span>
+text = "open youtube".lower()     <span class="code-comment"># → "open youtube" (already lowercase)</span>
+
+<span class="code-comment"># Loops through NORMALIZATION_MAP looking for matches:</span>
+<span class="code-comment"># "खोल"   → not found in text, skip</span>
+<span class="code-comment"># "khola" → not found in text, skip</span>
+<span class="code-comment"># "open"  → IS a key, but maps to "open" too — no change</span>
+<span class="code-comment"># "please", "can you", etc. → not found, skip</span>
+
+return "open youtube"  <span class="code-comment"># Nothing changed — already clean English</span></code></pre>
+                    </div>
+                    <div class="glass-panel">
+                        <p>The normalization map uses <strong>regex word boundaries</strong> (<code>\b</code>) for English/Romanized words and 
+                        direct <code>string.replace()</code> for Devanagari characters. Keys are sorted by length descending 
+                        so multi-word phrases like <code>"can you"</code> are matched before single words.</p>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="step-card" id="step-4">
+                    <div class="step-header">
+                        <span class="step-number">4</span>
+                        <div class="step-meta">
+                            <h3>Rule-Based Intent Matching</h3>
+                            <span class="file-badge">parser.py → parse_command()</span>
+                        </div>
+                    </div>
+                    <p>The parser runs through a priority-ordered series of rule checks on the normalized text:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header"><span class="lang">python — utils/parser.py</span></div>
+                        <pre><code>normalized = "open youtube"
+
+<span class="code-comment"># Priority 1: Exit check</span>
+if "exit" in normalized:         <span class="code-comment"># ❌ "exit" not found, skip</span>
+
+<span class="code-comment"># Priority 2: Create folder check</span>
+if "create folder" in normalized: <span class="code-comment"># ❌ not found, skip</span>
+
+<span class="code-comment"># Priority 3: Open check</span>
+if "open" in normalized:          <span class="code-comment"># ✅ MATCH! Enter this block</span>
+
+    words = "open youtube".split()            <span class="code-comment"># → ["open", "youtube"]</span>
+    target_words = [w for w in words if w != "open"]
+                                              <span class="code-comment"># → ["youtube"]</span>
+    target = " ".join(["youtube"])            <span class="code-comment"># → "youtube"</span>
+
+    <span class="code-comment"># Is target empty?</span>
+    if not target:                            <span class="code-comment"># ❌ Not empty</span>
+
+    <span class="code-comment"># Website or App? Check KNOWN_WEBSITES set</span>
+    <span class="code-comment"># KNOWN_WEBSITES = {"youtube", "google", "github", ...}</span>
+    if "youtube" in KNOWN_WEBSITES:           <span class="code-comment"># ✅ YES!</span>
+        return ("open_website", "youtube")    <span class="code-comment"># 🎯 RESULT</span></code></pre>
+                    </div>
+                    <div class="glass-panel">
+                        <p><strong>Priority order matters!</strong> Exit is checked first (highest priority), then folder creation, 
+                        then open commands. If nothing matches, the input falls through to the LLM fallback on line 116.</p>
+                    </div>
+                </div>
+
+                <!-- Step 5 -->
+                <div class="step-card" id="step-5">
+                    <div class="step-header">
+                        <span class="step-number">5</span>
+                        <div class="step-meta">
+                            <h3>Intent Routing</h3>
+                            <span class="file-badge">main.py → Lines 49-52</span>
+                        </div>
+                    </div>
+                    <p>Back in main.py, the returned tuple is matched to the correct executor:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header"><span class="lang">python — main.py</span></div>
+                        <pre><code>intent, data = ("open_website", "youtube")
+
+if intent == "open_app":          <span class="code-comment"># ❌</span>
+    execute_open_app(data)
+elif intent == "open_website":    <span class="code-comment"># ✅ MATCH!</span>
+    execute_open_website("youtube")  <span class="code-comment"># → Calls open_website.py</span>
+elif intent == "create_folder":   <span class="code-comment"># ❌</span>
+    execute_create_folder(data)</code></pre>
+                    </div>
+                </div>
+
+                <!-- Step 6 -->
+                <div class="step-card" id="step-6">
+                    <div class="step-header">
+                        <span class="step-number">6</span>
+                        <div class="step-meta">
+                            <h3>Execute: Open YouTube</h3>
+                            <span class="file-badge">commands/open_website.py</span>
+                        </div>
+                    </div>
+                    <p>The <code>execute()</code> function builds a full URL and opens it in the system's default browser:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header"><span class="lang">python — commands/open_website.py</span></div>
+                        <pre><code>website_name = "youtube"
+
+<span class="code-comment"># Step 1: Build URL — does "youtube" contain a "."?</span>
+if "." not in "youtube":            <span class="code-comment"># ✅ No dot found</span>
+    url = "https://www.youtube.com" <span class="code-comment"># Auto-formats to full URL</span>
+
+<span class="code-comment"># Step 2: Open in browser</span>
+success = webbrowser.open("https://www.youtube.com")
+
+if success:
+    print("[+] Successfully opened https://www.youtube.com")
+    <span class="code-comment"># 🌐 YouTube opens in your default browser!</span></code></pre>
+                    </div>
+                    <div class="glass-panel">
+                        <p>The URL builder handles three formats: bare names like <code>"youtube"</code> become 
+                        <code>https://www.youtube.com</code>, domains like <code>"example.org"</code> get <code>https://</code> 
+                        prefixed, and full URLs are used as-is.</p>
+                    </div>
+                </div>
+
+                <!-- Complete Chain Summary -->
+                <div class="chain-summary" id="chain-summary">
+                    <h3>⚡ Complete Execution Chain</h3>
+                    <div class="code-block-wrapper">
+                        <div class="code-header"><span class="lang">execution trace</span></div>
+                        <pre><code>You type: "open youtube"
+         ↓
+main.py:39         → captures input
+main.py:46         → parse_command("open youtube")
+  parser.py:77     → normalize_text() → "open youtube"
+  parser.py:99     → finds "open" keyword
+  parser.py:109    → "youtube" is in KNOWN_WEBSITES
+  parser.py:110    → returns ("open_website", "youtube")
+main.py:52         → calls execute_open_website("youtube")
+  open_website.py:11 → builds URL "https://www.youtube.com"
+  open_website.py:18 → webbrowser.open()
+                   ↓
+         🌐 YouTube opens in your browser!</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== NEW: Data Flow Section ===== -->
+            <section id="data-flow" class="doc-section">
+                <div class="section-badge">Pipeline</div>
+                <h2>Data Flow Pipeline</h2>
+                <p class="lead-text">Every user command flows through three processing layers before execution.</p>
+
+                <div class="flow-diagram" id="flow-diagram">
+                    <div class="flow-node flow-input">
+                        <div class="flow-icon">👤</div>
+                        <div class="flow-label">User Input</div>
+                        <div class="flow-detail">"youtube khola"</div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-node flow-normalize">
+                        <div class="flow-icon">🔄</div>
+                        <div class="flow-label">Normalize</div>
+                        <div class="flow-detail">parser.py → normalize_text()</div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-node flow-parse">
+                        <div class="flow-icon">🧠</div>
+                        <div class="flow-label">Parse Intent</div>
+                        <div class="flow-detail">Rule-based → LLM fallback</div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-node flow-route">
+                        <div class="flow-icon">🔀</div>
+                        <div class="flow-label">Route</div>
+                        <div class="flow-detail">main.py dispatcher</div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-node flow-execute">
+                        <div class="flow-icon">⚡</div>
+                        <div class="flow-label">Execute</div>
+                        <div class="flow-detail">commands/*.py</div>
+                    </div>
+                </div>
+
+                <h3 class="sub-heading">Component Details</h3>
+                <div class="grid-cards">
+                    <div class="feature-card">
+                        <div class="icon">📥</div>
+                        <h3>main.py — Entry Point</h3>
+                        <p>Runs the interactive loop, captures input, calls <code>parse_command()</code>, and routes the 
+                        <code>(intent, data)</code> tuple to the correct executor module.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🧠</div>
+                        <h3>parser.py — The Brain</h3>
+                        <p><code>normalize_text()</code> translates Nepali/mixed input to English tokens. 
+                        <code>parse_command()</code> extracts structured intents via priority-ordered rules.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🤖</div>
+                        <h3>llm.py — Smart Fallback</h3>
+                        <p>When rules can't determine intent, sends input to local Ollama Mistral with a strict 
+                        system prompt. Temperature 0.0 ensures deterministic output.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">⚙️</div>
+                        <h3>commands/ — Executors</h3>
+                        <p>Each module has an <code>execute(data)</code> function: <code>open_app.py</code> uses 
+                        <code>apps.json</code>, <code>open_website.py</code> uses <code>webbrowser</code>, 
+                        <code>create_folder.py</code> uses <code>os.makedirs()</code>.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== NEW: Normalization Map Section ===== -->
+            <section id="normalization" class="doc-section">
+                <div class="section-badge">NLP Engine</div>
+                <h2>Normalization Map Reference</h2>
+                <p>The normalization engine translates mixed Nepali (Devanagari & Romanized) and English filler words 
+                into clean, structured English tokens.</p>
+
+                <div class="table-wrapper">
+                    <table class="docs-table" id="normalization-table">
+                        <thead>
+                            <tr>
+                                <th>Input Word</th>
+                                <th>Maps To</th>
+                                <th>Category</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>खोल</code> / <code>khola</code> / <code>khol</code></td><td><code>open</code></td><td>🚀 Open / Launch</td></tr>
+                            <tr><td><code>chalao</code> / <code>जाउ</code> / <code>jau</code></td><td><code>open</code></td><td>🚀 Open / Launch</td></tr>
+                            <tr><td><code>start</code> / <code>launch</code></td><td><code>open</code></td><td>🚀 Open / Launch</td></tr>
+                            <tr><td><code>बनाउ</code> / <code>banao</code> / <code>bana</code></td><td><code>create</code></td><td>📁 Create</td></tr>
+                            <tr><td><code>फोल्डर</code></td><td><code>folder</code></td><td>📁 Create</td></tr>
+                            <tr><td><code>naya</code></td><td><code>create</code></td><td>📁 Create</td></tr>
+                            <tr><td><code>बन्द</code> / <code>banda</code></td><td><code>exit</code></td><td>🛑 Exit / Stop</td></tr>
+                            <tr><td><code>stop</code> / <code>quit</code> / <code>close</code></td><td><code>exit</code></td><td>🛑 Exit / Stop</td></tr>
+                            <tr><td><code>please</code> / <code>can you</code></td><td><em>(removed)</em></td><td>🗑️ Filler</td></tr>
+                            <tr><td><code>gara</code> / <code>gar</code> / <code>ma</code></td><td><em>(removed)</em></td><td>🗑️ Filler</td></tr>
+                            <tr><td><code>the</code> / <code>a</code> / <code>an</code></td><td><em>(removed)</em></td><td>🗑️ Filler</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="glass-panel">
+                    <p><strong>How matching works:</strong> English/Romanized words use regex word boundaries (<code>\b</code>) for 
+                    precise whole-word matching. Devanagari characters (Unicode range <code>\u0900–\u097F</code>) use 
+                    direct <code>string.replace()</code> since <code>\b</code> doesn't handle Devanagari cleanly. 
+                    Keys are sorted by length (longest first) so multi-word phrases match before single words.</p>
+                </div>
+            </section>
+
+            <!-- ===== NEW: Trace Examples Section ===== -->
+            <section id="trace-examples" class="doc-section">
+                <div class="section-badge">Examples</div>
+                <h2>Trace Examples</h2>
+                <p>See how different types of input flow through the entire system.</p>
+
+                <!-- Example 1: Nepali Input -->
+                <div class="trace-card" id="trace-nepali">
+                    <div class="trace-header">
+                        <span class="trace-badge trace-nepali-badge">🇳🇵 Nepali</span>
+                        <h3>"youtube khola"</h3>
+                    </div>
+                    <div class="trace-steps">
+                        <div class="trace-step">
+                            <span class="trace-step-num">①</span>
+                            <div class="trace-content">
+                                <code>normalize_text("youtube khola")</code>
+                                <span class="trace-arrow">→</span>
+                                <code>"khola"</code> maps to <code>"open"</code>
+                                <span class="trace-arrow">→</span>
+                                Result: <code class="trace-result">"youtube open"</code>
+                            </div>
+                        </div>
+                        <div class="trace-step">
+                            <span class="trace-step-num">②</span>
+                            <div class="trace-content">
+                                <code>parse_command()</code> finds <code>"open"</code> keyword
+                                <span class="trace-arrow">→</span>
+                                target = <code>"youtube"</code>
+                            </div>
+                        </div>
+                        <div class="trace-step">
+                            <span class="trace-step-num">③</span>
+                            <div class="trace-content">
+                                <code>"youtube" in KNOWN_WEBSITES</code>
+                                <span class="trace-arrow">→</span>
+                                <code class="trace-result">✅ ("open_website", "youtube")</code>
+                            </div>
+                        </div>
+                        <div class="trace-step">
+                            <span class="trace-step-num">④</span>
+                            <div class="trace-content">
+                                <code>open_website.execute("youtube")</code>
+                                <span class="trace-arrow">→</span>
+                                <code class="trace-result">🌐 https://www.youtube.com</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 2: Folder Creation -->
+                <div class="trace-card" id="trace-folder">
+                    <div class="trace-header">
+                        <span class="trace-badge trace-create-badge">📁 Create</span>
+                        <h3>"naya folder banao reports"</h3>
+                    </div>
+                    <div class="trace-steps">
+                        <div class="trace-step">
+                            <span class="trace-step-num">①</span>
+                            <div class="trace-content">
+                                <code>normalize_text()</code>
+                                <span class="trace-arrow">→</span>
+                                <code>"naya"</code> → <code>"create"</code>, <code>"banao"</code> → <code>"create"</code>
+                                <span class="trace-arrow">→</span>
+                                Result: <code class="trace-result">"create folder create reports"</code>
+                            </div>
+                        </div>
+                        <div class="trace-step">
+                            <span class="trace-step-num">②</span>
+                            <div class="trace-content">
+                                <code>"create folder"</code> found in normalized text
+                                <span class="trace-arrow">→</span>
+                                filters out <code>"create"</code> and <code>"folder"</code>
+                            </div>
+                        </div>
+                        <div class="trace-step">
+                            <span class="trace-step-num">③</span>
+                            <div class="trace-content">
+                                Remaining target words: <code>["reports"]</code>
+                                <span class="trace-arrow">→</span>
+                                <code class="trace-result">✅ ("create_folder", "reports")</code>
+                            </div>
+                        </div>
+                        <div class="trace-step">
+                            <span class="trace-step-num">④</span>
+                            <div class="trace-content">
+                                <code>create_folder.execute("reports")</code>
+                                <span class="trace-arrow">→</span>
+                                <code class="trace-result">📁 os.makedirs("reports")</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 3: LLM Fallback -->
+                <div class="trace-card" id="trace-llm">
+                    <div class="trace-header">
+                        <span class="trace-badge trace-llm-badge">🤖 LLM Fallback</span>
+                        <h3>"youtube हेर्न मन लाग्यो"</h3>
+                    </div>
+                    <div class="trace-steps">
+                        <div class="trace-step">
+                            <span class="trace-step-num">①</span>
+                            <div class="trace-content">
+                                <code>normalize_text()</code>
+                                <span class="trace-arrow">→</span>
+                                No known tokens match
+                                <span class="trace-arrow">→</span>
+                                Result: <code class="trace-result">"youtube हेर्न मन लाग्यो"</code> (mostly unchanged)
+                            </div>
+                        </div>
+                        <div class="trace-step">
+                            <span class="trace-step-num">②</span>
+                            <div class="trace-content">
+                                <code>parse_command()</code>: no <code>"exit"</code>, no <code>"create folder"</code>, 
+                                no <code>"open"</code> found
+                                <span class="trace-arrow">→</span>
+                                Falls to line 116
+                            </div>
+                        </div>
+                        <div class="trace-step">
+                            <span class="trace-step-num">③</span>
+                            <div class="trace-content">
+                                <code>query_llm()</code> sends to Ollama Mistral at <code>localhost:11434</code>
+                                <span class="trace-arrow">→</span>
+                                LLM responds:
+                                <code class="trace-result">intent: open_website, data: youtube</code>
+                            </div>
+                        </div>
+                        <div class="trace-step">
+                            <span class="trace-step-num">④</span>
+                            <div class="trace-content">
+                                Parsed LLM response
+                                <span class="trace-arrow">→</span>
+                                <code class="trace-result">✅ ("open_website", "youtube") → 🌐 Opens YouTube</code>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
